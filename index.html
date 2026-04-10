@@ -2,7 +2,8 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>NNC Pixel Designer</title>
+<title>InFinnIte's Pixel Designer</title>
+<link rel="icon" type="image/png" href="favicon.png">
 
 <style>
 :root{
@@ -265,8 +266,27 @@ B <input id="b" type="number" min="0" max="255" onchange="updateRGB()">
 </div>
 
 <div class="settingsPanel" id="settings">
-<label><input type="radio" name="theme" onclick="setTheme('dark')" checked> Dark Mode</label>
-<label><input type="radio" name="theme" onclick="setTheme('light')"> Light Mode</label>
+<label>
+  <input type="checkbox" onchange="toggleTheme(this)">
+  Light Mode
+</label>
+
+<label>
+  <input type="checkbox" checked onchange="toggleGrid(this)">
+  Show Grid
+</label>
+
+<label>
+  <input type="checkbox" onchange="toggleMirrorX(this)">
+  Mirror X
+</label>
+
+<label>
+  <input type="checkbox" onchange="toggleMirrorY(this)">
+  Mirror Y
+</label>
+
+<button onclick="clearGrid()">Clear Canvas</button>
 </div>
 
 <div class="settingsPanel" id="settings">
@@ -308,7 +328,8 @@ Gameboy:["#0f380f","#306230","#8bac0f","#9bbc0f"],
 Material:["#f44336","#2196f3","#4caf50","#ffeb3b"]
 };
 
-let tool="draw",color="#ff0000",w=16,h=16,zoom=1;
+let tool="draw",color="#ff0000",width=16,height=16,zoom=1;
+let showGrid=true, mirrorX=false, mirrorY=false;
 let grid=[],history=[],redoStack=[],down=false;
 
 function setTheme(t){document.body.className=t;}
@@ -336,17 +357,66 @@ function redo(){if(redoStack.length){history.push(JSON.stringify(grid));grid=JSO
 
 function fill(r,c,t,n){if(t===n)return;let s=[[r,c]];while(s.length){let [x,y]=s.pop();if(x<0||y<0||x>=h||y>=w)continue;if(grid[x][y]!==t)continue;grid[x][y]=n;s.push([x+1,y],[x-1,y],[x,y+1],[x,y-4]);}}
 
-function paint(r,c){if(tool==='eyedrop')return setColor(grid[r][c]);if(tool==='bucket'){save();fill(r,c,grid[r][c],color);return;}grid[r][c]=tool==='erase'?'#fff':color;}
+function paint(r,c){
+  if(tool==='eyedrop'){setColor(grid[r][c]);return;}
+
+  if(tool==='bucket'){
+    save();
+    floodFill(r,c,grid[r][c],color);
+    return;
+  }
+
+  if(tool==='draw') grid[r][c]=color;
+  if(tool==='erase') grid[r][c]="#ffffff";
+
+  if(mirrorX) grid[r][width-1-c] = (tool==='erase' ? "#ffffff" : color);
+  if(mirrorY) grid[height-1-r][c] = (tool==='erase' ? "#ffffff" : color);
+}
 
 function zoomIn(){zoom+=.2;render();}
 function zoomOut(){zoom-=.2;render();}
 
-function render(){const g=document.getElementById('grid');let s=20*zoom;g.style.gridTemplateColumns=`repeat(${w},${s}px)`;g.innerHTML='';for(let r=0;r<h;r++)for(let c=0;c<w;c++){let d=document.createElement('div');d.className='cell';d.style.width=s+'px';d.style.height=s+'px';d.style.background=grid[r][c];d.onmousedown=()=>{save();down=true;paint(r,c);render();};d.onmouseenter=()=>{if(down){paint(r,c);render();}};g.appendChild(d);}}
+function render(){
+  const g=document.getElementById("grid");
+  const size=20*zoom;
+  g.style.gridTemplateColumns=`repeat(${width},${size}px)`;
+  g.innerHTML="";
+
+  for(let r=0;r<height;r++){
+    for(let c=0;c<width;c++){
+      const cell=document.createElement("div");
+      cell.className="cell";
+      cell.style.width=size+"px";
+      cell.style.height=size+"px";
+      cell.style.background=grid[r][c];
+      cell.style.border = showGrid ? "1px solid rgba(255,255,255,0.03)" : "none";
+
+      cell.onmousedown=()=>{save();isDown=true;paint(r,c);render();};
+      cell.onmouseenter=()=>{if(isDown){paint(r,c);render();}};
+
+      g.appendChild(cell);
+    }
+  }
+}
 
 function renderPalette(){let p=document.getElementById('paletteList');p.innerHTML='';for(let n in PALETTES){let g=document.createElement('div');g.className='paletteGroup';g.innerHTML=`<div class='paletteTitle'>${n}</div>`;let c=document.createElement('div');c.className='paletteColors';PALETTES[n].forEach(x=>{let d=document.createElement('div');d.className='color';d.style.background=x;d.onclick=()=>setColor(x);c.appendChild(d);});g.appendChild(c);p.appendChild(g);}}
 
 document.addEventListener('mouseup',()=>down=false);
 init();
+
+function toggleGrid(el){
+  showGrid = el.checked;
+  render();
+}
+
+function toggleMirrorX(el){ mirrorX = el.checked; }
+function toggleMirrorY(el){ mirrorY = el.checked; }
+
+function clearGrid(){
+  if(confirm("Clear canvas?")){
+    createGrid();
+  }
+}
 
 function toggleSettings(){
   const s=document.getElementById("settings");
