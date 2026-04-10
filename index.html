@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Pixel Designer</title>
+
+<style>
+body{
+  margin:0;
+  background:#0b0b12;
+  color:white;
+  font-family:sans-serif;
+  display:flex;
+  height:100vh;
+}
+
+/* right vertical branding */
+.brand{
+  writing-mode:vertical-rl;
+  text-orientation:mixed;
+  padding:10px 6px;
+  border-left:1px solid #222;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:10px;
+}
+.brand .title{
+  font-size:18px;
+  letter-spacing:2px;
+}
+.brand .sub{
+  font-size:12px;
+  color:#555;
+}
+
+.app{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+
+.toolbar{
+  display:flex;
+  gap:6px;
+  padding:8px;
+  border-bottom:1px solid #333;
+  flex-wrap:wrap;
+}
+
+button,select,input{
+  background:#222;
+  color:white;
+  border:1px solid #444;
+  padding:4px 6px;
+}
+
+#palette{display:flex;gap:4px;padding:6px;border-bottom:1px solid #333;flex-wrap:wrap;}
+.color{width:20px;height:20px;cursor:pointer;border:1px solid #333;}
+
+/* RGB picker */
+#picker{
+  display:flex;
+  gap:6px;
+  padding:6px;
+  border-bottom:1px solid #333;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+#grid{
+  flex:1;
+  display:grid;
+  justify-content:center;
+  align-content:center;
+}
+.cell{
+  border:1px solid rgba(255,255,255,0.05);
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<div class="toolbar">
+<button onclick="tool='draw'">✏️</button>
+<button onclick="tool='erase'">🧽</button>
+<button onclick="tool='bucket'">🪣</button>
+<button onclick="tool='eyedrop'">👆</button>
+
+<button onclick="undo()">↩️</button>
+<button onclick="redo()">↪️</button>
+
+<button onclick="zoomOut()">-</button>
+<button onclick="zoomIn()">+</button>
+
+<select onchange="setPalette(this.value)">
+<option>Minecraft</option>
+<option>Pastel</option>
+<option>Vaporwave</option>
+<option>Gameboy</option>
+<option>Neon</option>
+<option>Grayscale</option>
+<option>Fire</option>
+<option>Ocean</option>
+<option>Forest</option>
+<option>Sunset</option>
+</select>
+</div>
+
+<div id="palette"></div>
+
+<!-- RGB COLOR PICKER -->
+<div id="picker">
+<input type="color" id="colorPicker" onchange="setColor(this.value)">
+R <input type="number" id="r" min="0" max="255" value="255" onchange="updateFromRGB()">
+G <input type="number" id="g" min="0" max="255" value="0" onchange="updateFromRGB()">
+B <input type="number" id="b" min="0" max="255" value="0" onchange="updateFromRGB()">
+</div>
+
+<div id="grid"></div>
+
+<div style="padding:8px;border-top:1px solid #333;">
+Size:
+<input id="w" type="number" value="16" min="1" max="32">
+x
+<input id="h" type="number" value="16" min="1" max="32">
+<button onclick="resizeGrid()">Apply</button>
+
+<br><br>
+Presets:
+<button onclick="setSize(8,8)">8x8</button>
+<button onclick="setSize(16,16)">16x16</button>
+<button onclick="setSize(32,32)">32x32</button>
+</div>
+
+</div>
+
+<!-- RIGHT SIDE TEXT -->
+<div class="brand">
+<div class="title">NNC Pixel Designer</div>
+<div class="sub">By InFinnIte</div>
+</div>
+
+<script>
+const PALETTES={
+Minecraft:["#FFFFFF","#D87F33","#B24CD8","#6699D8","#E5E533","#7FCC19","#F27FA5","#4C4C4C","#999999","#4C7F99","#7F3FB2","#334CB2","#664C33","#667F33","#993333","#191919"],
+Pastel:["#ffd1dc","#c1fba4","#fffd82","#bde0fe","#ffc8dd","#d0f4de","#a0c4ff","#f1c0e8"],
+Vaporwave:["#ff71ce","#01cdfe","#05ffa1","#b967ff","#fffb96"],
+Gameboy:["#0F380F","#306230","#8BAC0F","#9BBC0F"],
+Neon:["#ff0000","#ff7f00","#ffff00","#00ff00","#00ffff","#0000ff","#8b00ff","#ff1493"],
+Grayscale:["#000000","#222222","#444444","#666666","#888888","#aaaaaa","#cccccc","#eeeeee","#ffffff"],
+Fire:["#1a0000","#660000","#cc0000","#ff3300","#ff6600","#ff9900","#ffcc00","#ffff66"],
+Ocean:["#001f3f","#003f7f","#005fbf","#007fff","#3399ff","#66ccff","#99e6ff","#ccf5ff"],
+Forest:["#0b3d0b","#145214","#1f7a1f","#2ea62e","#55cc55","#88e088","#b3f0b3"],
+Sunset:["#2b0a3d","#5a0f4d","#8c1c5b","#c23664","#f25f5c","#ff8c42","#ffd166"]
+};
+
+let tool="draw";
+let color="#ff0000";
+let width=16,height=16;
+let zoom=1;
+
+let grid=[];
+let history=[],redoStack=[];
+let isDown=false;
+
+function init(){
+  createGrid();
+  setPalette("Minecraft");
+  syncRGB(color);
+}
+
+function createGrid(){
+  grid=Array.from({length:height},()=>Array(width).fill("#ffffff"));
+  render();
+}
+
+function resizeGrid(){
+  width=Math.max(1,Math.min(32,+w.value));
+  height=Math.max(1,Math.min(32,+h.value));
+  createGrid();
+}
+
+function setSize(wi,hi){
+  width=wi;height=hi;
+  w.value=wi;
+  h.value=hi;
+  createGrid();
+}
+
+function setPalette(name){
+  const p=document.getElementById("palette");
+  p.innerHTML="";
+  PALETTES[name].forEach(c=>{
+    const d=document.createElement("div");
+    d.className="color";
+    d.style.background=c;
+    d.onclick=()=>setColor(c);
+    p.appendChild(d);
+  });
+}
+
+/* COLOR SYSTEM */
+function setColor(c){
+  color=c;
+  document.getElementById("colorPicker").value=c;
+  syncRGB(c);
+}
+
+function syncRGB(hex){
+  const r=parseInt(hex.substr(1,2),16);
+  const g=parseInt(hex.substr(3,2),16);
+  const b=parseInt(hex.substr(5,2),16);
+  document.getElementById("r").value=r;
+  document.getElementById("g").value=g;
+  document.getElementById("b").value=b;
+}
+
+function updateFromRGB(){
+  let r=+document.getElementById("r").value;
+  let g=+document.getElementById("g").value;
+  let b=+document.getElementById("b").value;
+
+  r=Math.max(0,Math.min(255,r));
+  g=Math.max(0,Math.min(255,g));
+  b=Math.max(0,Math.min(255,b));
+
+  const hex="#"+
+    r.toString(16).padStart(2,'0')+
+    g.toString(16).padStart(2,'0')+
+    b.toString(16).padStart(2,'0');
+
+  setColor(hex);
+}
+
+function save(){
+  history.push(JSON.stringify(grid));
+  if(history.length>50)history.shift();
+  redoStack=[];
+}
+
+function undo(){
+  if(!history.length)return;
+  redoStack.push(JSON.stringify(grid));
+  grid=JSON.parse(history.pop());
+  render();
+}
+
+function redo(){
+  if(!redoStack.length)return;
+  history.push(JSON.stringify(grid));
+  grid=JSON.parse(redoStack.pop());
+  render();
+}
+
+function paint(r,c){
+  if(tool==="eyedrop"){setColor(grid[r][c]);return;}
+  if(tool==="draw")grid[r][c]=color;
+  if(tool==="erase")grid[r][c]="#ffffff";
+  if(tool==="bucket")fill(r,c,grid[r][c],color);
+}
+
+function fill(r,c,target,newC){
+  if(target===newC)return;
+  const stack=[[r,c]];
+  while(stack.length){
+    const [x,y]=stack.pop();
+    if(x<0||y<0||x>=height||y>=width)continue;
+    if(grid[x][y]!==target)continue;
+    grid[x][y]=newC;
+    stack.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);
+  }
+}
+
+function zoomIn(){zoom=Math.min(3,zoom+0.2);render();}
+function zoomOut(){zoom=Math.max(0.5,zoom-0.2);render();}
+
+function render(){
+  const g=document.getElementById("grid");
+  const size=20*zoom;
+
+  g.style.gridTemplateColumns=`repeat(${width},${size}px)`;
+  g.innerHTML="";
+
+  for(let r=0;r<height;r++){
+    for(let c=0;c<width;c++){
+      const cell=document.createElement("div");
+      cell.className="cell";
+      cell.style.width=size+"px";
+      cell.style.height=size+"px";
+      cell.style.background=grid[r][c];
+
+      cell.onmousedown=()=>{save();isDown=true;paint(r,c);render();};
+      cell.onmouseenter=()=>{if(isDown){paint(r,c);render();}};
+
+      g.appendChild(cell);
+    }
+  }
+}
+
+document.addEventListener("mouseup",()=>isDown=false);
+
+init();
+/* CUSTOM PALETTES */
+let customPalettes = {};
+
+function saveCurrentPalette(){
+  const name = prompt("Name your palette:");
+  if(!name) return;
+  const colors = Array.from(document.querySelectorAll("#palette .color")).map(c=>c.style.background);
+  customPalettes[name] = colors;
+  addPaletteOption(name);
+}
+
+function addPaletteOption(name){
+  const sel = document.querySelector("select");
+  const opt = document.createElement("option");
+  opt.textContent = name;
+  sel.appendChild(opt);
+}
+
+// override setPalette to include custom
+const originalSetPalette = setPalette;
+setPalette = function(name){
+  if(customPalettes[name]){
+    const p=document.getElementById("palette");
+    p.innerHTML="";
+    customPalettes[name].forEach(c=>{
+      const d=document.createElement("div");
+      d.className="color";
+      d.style.background=c;
+      d.onclick=()=>setColor(c);
+      p.appendChild(d);
+    });
+  } else {
+    originalSetPalette(name);
+  }
+}
+
+// add button
+const toolbar = document.querySelector(".toolbar");
+const btn = document.createElement("button");
+btn.textContent = "💾 Save Palette";
+btn.onclick = saveCurrentPalette;
+toolbar.appendChild(btn);
+
+</script>
+
+</body>
+</html>
