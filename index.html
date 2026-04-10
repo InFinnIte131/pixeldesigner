@@ -2,144 +2,208 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Pixel Designer</title>
+<title>index.html - NNC Pixel Designer</title>
 
 <style>
 body{
   margin:0;
-  background:#0b0b12;
-  color:white;
-  font-family:sans-serif;
+  background:linear-gradient(135deg,#0b0b12,#141420);
+  color:#eee;
+  font-family:system-ui,sans-serif;
   display:flex;
   height:100vh;
+  overflow:hidden;
 }
 
-/* right vertical branding */
-.brand{
-  writing-mode:vertical-rl;
-  text-orientation:mixed;
-  padding:10px 6px;
-  border-left:1px solid #222;
+/* LEFT TOOLBAR */
+.sidebar{
+  width:70px;
+  background:rgba(20,20,30,0.95);
+  border-right:1px solid #222;
   display:flex;
   flex-direction:column;
-  justify-content:center;
   align-items:center;
-  gap:10px;
-}
-.brand .title{
-  font-size:18px;
-  letter-spacing:2px;
-}
-.brand .sub{
-  font-size:12px;
-  color:#555;
+  padding:10px 6px;
+  gap:8px;
+  backdrop-filter: blur(6px);
 }
 
-.app{
+.sidebar button{
+  width:48px;
+  height:48px;
+  border-radius:10px;
+  background:#1c1c28;
+  border:1px solid #333;
+  color:white;
+  cursor:pointer;
+  transition:0.15s;
+}
+
+.sidebar button:hover{background:#2a2a3a;transform:scale(1.05);}
+.sidebar button.active{background:#4c7f99;border-color:#6aaed6;}
+
+/* MAIN */
+.main{
   flex:1;
   display:flex;
   flex-direction:column;
+  overflow:hidden;
 }
 
-.toolbar{
+.topbar{
   display:flex;
   gap:6px;
-  padding:8px;
-  border-bottom:1px solid #333;
+  padding:10px;
+  border-bottom:1px solid #222;
+  background:rgba(20,20,30,0.85);
+  backdrop-filter: blur(6px);
   flex-wrap:wrap;
 }
 
 button,select,input{
-  background:#222;
-  color:white;
-  border:1px solid #444;
-  padding:4px 6px;
+  background:#1c1c28;
+  color:#eee;
+  border:1px solid #333;
+  padding:6px 8px;
+  border-radius:6px;
 }
+button:hover{background:#2a2a3a;}
 
-#palette{display:flex;gap:4px;padding:6px;border-bottom:1px solid #333;flex-wrap:wrap;}
-.color{width:20px;height:20px;cursor:pointer;border:1px solid #333;}
-
-/* RGB picker */
-#picker{
-  display:flex;
-  gap:6px;
-  padding:6px;
-  border-bottom:1px solid #333;
-  align-items:center;
-  flex-wrap:wrap;
-}
-
+/* GRID */
 #grid{
   flex:1;
   display:grid;
   justify-content:center;
   align-content:center;
 }
+
 .cell{
-  border:1px solid rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.03);
 }
+
+/* RGB */
+#picker{
+  display:flex;
+  gap:6px;
+  padding:8px;
+  border-bottom:1px solid #222;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+/* RIGHT PALETTE PANEL */
+.palettePanel{
+  width:180px;
+  background:rgba(20,20,30,0.95);
+  border-left:1px solid #222;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.paletteHeader{
+  padding:10px;
+  border-bottom:1px solid #222;
+  font-size:12px;
+  color:#aaa;
+  letter-spacing:2px;
+}
+
+#paletteList{
+  overflow-y:auto;
+  flex:1;
+  padding:8px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.paletteGroup{
+  border:1px solid #333;
+  border-radius:8px;
+  padding:6px;
+  background:#151520;
+}
+
+.paletteTitle{
+  font-size:11px;
+  color:#888;
+  margin-bottom:6px;
+}
+
+.paletteColors{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+}
+
+.color{
+  width:18px;
+  height:18px;
+  border-radius:4px;
+  border:1px solid #222;
+  cursor:pointer;
+}
+.color:hover{transform:scale(1.15);border-color:#777;}
+
+/* BRAND */
+.brand{
+  writing-mode:vertical-rl;
+  text-orientation:mixed;
+  padding:10px;
+  border-left:1px solid #222;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+}
+
+.brand .title{font-size:16px;letter-spacing:3px;color:#ccc;}
+.brand .sub{font-size:11px;color:#444;}
+
 </style>
 </head>
 
 <body>
 
-<div class="app">
-
-<div class="toolbar">
-<button onclick="tool='draw'">✏️</button>
-<button onclick="tool='erase'">🧽</button>
-<button onclick="tool='bucket'">🪣</button>
-<button onclick="tool='eyedrop'">👆</button>
+<div class="sidebar">
+<button class="tool active" onclick="setTool('draw',this)">✏️</button>
+<button class="tool" onclick="setTool('erase',this)">🧽</button>
+<button class="tool" onclick="setTool('bucket',this)">🪣</button>
+<button class="tool" onclick="setTool('eyedrop',this)">👆</button>
 
 <button onclick="undo()">↩️</button>
 <button onclick="redo()">↪️</button>
-
 <button onclick="zoomOut()">-</button>
 <button onclick="zoomIn()">+</button>
-
-<select onchange="setPalette(this.value)">
-<option>Minecraft</option>
-<option>Pastel</option>
-<option>Vaporwave</option>
-<option>Gameboy</option>
-<option>Neon</option>
-<option>Grayscale</option>
-<option>Fire</option>
-<option>Ocean</option>
-<option>Forest</option>
-<option>Sunset</option>
-</select>
 </div>
 
-<div id="palette"></div>
+<div class="main">
 
-<!-- RGB COLOR PICKER -->
 <div id="picker">
 <input type="color" id="colorPicker" onchange="setColor(this.value)">
-R <input type="number" id="r" min="0" max="255" value="255" onchange="updateFromRGB()">
-G <input type="number" id="g" min="0" max="255" value="0" onchange="updateFromRGB()">
-B <input type="number" id="b" min="0" max="255" value="0" onchange="updateFromRGB()">
+R <input type="number" id="r" min="0" max="255" onchange="updateFromRGB()">
+G <input type="number" id="g" min="0" max="255" onchange="updateFromRGB()">
+B <input type="number" id="b" min="0" max="255" onchange="updateFromRGB()">
 </div>
 
 <div id="grid"></div>
 
-<div style="padding:8px;border-top:1px solid #333;">
+<div style="padding:10px;border-top:1px solid #222;">
 Size:
-<input id="w" type="number" value="16" min="1" max="32">
-x
+<input id="w" type="number" value="16" min="1" max="32"> x
 <input id="h" type="number" value="16" min="1" max="32">
 <button onclick="resizeGrid()">Apply</button>
-
-<br><br>
-Presets:
-<button onclick="setSize(8,8)">8x8</button>
-<button onclick="setSize(16,16)">16x16</button>
-<button onclick="setSize(32,32)">32x32</button>
 </div>
 
 </div>
 
-<!-- RIGHT SIDE TEXT -->
+<!-- RIGHT PALETTE SCROLL MENU -->
+<div class="palettePanel">
+<div class="paletteHeader">PALETTES</div>
+<div id="paletteList"></div>
+</div>
+
 <div class="brand">
 <div class="title">NNC Pixel Designer</div>
 <div class="sub">By InFinnIte</div>
@@ -156,198 +220,86 @@ Grayscale:["#000000","#222222","#444444","#666666","#888888","#aaaaaa","#cccccc"
 Fire:["#1a0000","#660000","#cc0000","#ff3300","#ff6600","#ff9900","#ffcc00","#ffff66"],
 Ocean:["#001f3f","#003f7f","#005fbf","#007fff","#3399ff","#66ccff","#99e6ff","#ccf5ff"],
 Forest:["#0b3d0b","#145214","#1f7a1f","#2ea62e","#55cc55","#88e088","#b3f0b3"],
-Sunset:["#2b0a3d","#5a0f4d","#8c1c5b","#c23664","#f25f5c","#ff8c42","#ffd166"]
+Sunset:["#2b0a3d","#5a0f4d","#8c1c5b","#c23664","#f25f5c","#ff8c42","#ffd166"],
+Candy:["#ffb3ba","#ffdfba","#ffffba","#baffc9","#bae1ff"],
+RetroArcade:["#ff004d","#00e5ff","#ffcc00","#2bff00","#ff00ff"],
+EarthTones:["#3b2f2f","#6b4f4f","#a67c52","#d2b48c","#f5deb3"],
+Ice:["#d0f0ff","#a0d8ff","#70c0ff","#40a0ff","#2080ff"],
+Sunrise:["#ff5e62","#ff9966","#ffcc66","#fff176"],
+Galaxy:["#0b0c2a","#1b1f3b","#3a1c71","#5f2c82","#b24592"],
+Autumn:["#7f1d1d","#b45309","#d97706","#f59e0b","#fbbf24"],
+Cyberpunk:["#ff00ff","#00ffff","#ff0066","#00ff66","#6600ff"],
+Desert:["#c2b280","#d2b48c","#deb887","#f4a460"],
+Candy2:["#ffaad4","#ffd1dc","#c1ffd7","#d1c4ff"],
+Volcano:["#2b0000","#6b0000","#b30000","#ff3b00","#ff8c00"],
+Slime:["#0f3d0f","#2ecc71","#58d68d","#a9dfbf"],
+Toxic:["#003300","#66ff00","#99ff33","#ccff66"],
+Metal:["#111","#333","#666","#999","#ccc"],
+Ruby:["#2b0000","#8b0000","#cc0000","#ff1a1a"],
+Lavender:["#2e003e","#6a0dad","#b57edc","#e6ccff"],
+Sky:["#001f3f","#0074d9","#7fdbff","#cceeff"],
+Moss:["#0b2e13","#145a32","#1e8449","#27ae60"],
+Candy3:["#ff66b2","#ff99cc","#ffccdd","#ffe6f0"],
+SunMetal:["#3a3a3a","#6e6e6e","#bfbfbf","#f5f5f5"]
 };
 
-let tool="draw";
-let color="#ff0000";
-let width=16,height=16;
-let zoom=1;
+let tool="draw",color="#ff0000",width=16,height=16,zoom=1;
+let grid=[],history=[],redoStack=[],isDown=false;
 
-let grid=[];
-let history=[],redoStack=[];
-let isDown=false;
+function setTool(t,btn){tool=t;document.querySelectorAll('.sidebar button.tool').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');}
 
-function init(){
-  createGrid();
-  setPalette("Minecraft");
-  syncRGB(color);
-}
+function init(){createGrid();renderPalettePanel();syncRGB(color);}
 
-function createGrid(){
-  grid=Array.from({length:height},()=>Array(width).fill("#ffffff"));
-  render();
-}
+function createGrid(){grid=Array.from({length:height},()=>Array(width).fill("#ffffff"));render();}
 
-function resizeGrid(){
-  width=Math.max(1,Math.min(32,+w.value));
-  height=Math.max(1,Math.min(32,+h.value));
-  createGrid();
-}
+function resizeGrid(){width=Math.max(1,Math.min(32,+w.value));height=Math.max(1,Math.min(32,+h.value));createGrid();}
 
-function setSize(wi,hi){
-  width=wi;height=hi;
-  w.value=wi;
-  h.value=hi;
-  createGrid();
-}
+function setColor(c){color=c;document.getElementById("colorPicker").value=c;syncRGB(c);}
 
-function setPalette(name){
-  const p=document.getElementById("palette");
-  p.innerHTML="";
-  PALETTES[name].forEach(c=>{
-    const d=document.createElement("div");
-    d.className="color";
-    d.style.background=c;
-    d.onclick=()=>setColor(c);
-    p.appendChild(d);
-  });
-}
+function syncRGB(hex){r.value=parseInt(hex.substr(1,2),16);g.value=parseInt(hex.substr(3,2),16);b.value=parseInt(hex.substr(5,2),16);}
 
-/* COLOR SYSTEM */
-function setColor(c){
-  color=c;
-  document.getElementById("colorPicker").value=c;
-  syncRGB(c);
-}
+function updateFromRGB(){let r=+window.r.value,g=+window.g.value,b=+window.b.value;setColor("#"+r.toString(16).padStart(2,'0')+g.toString(16).padStart(2,'0')+b.toString(16).padStart(2,'0'));}
 
-function syncRGB(hex){
-  const r=parseInt(hex.substr(1,2),16);
-  const g=parseInt(hex.substr(3,2),16);
-  const b=parseInt(hex.substr(5,2),16);
-  document.getElementById("r").value=r;
-  document.getElementById("g").value=g;
-  document.getElementById("b").value=b;
-}
+function save(){history.push(JSON.stringify(grid));redoStack=[];}
+function undo(){if(history.length){redoStack.push(JSON.stringify(grid));grid=JSON.parse(history.pop());render();}}
+function redo(){if(redoStack.length){history.push(JSON.stringify(grid));grid=JSON.parse(redoStack.pop());render();}}
 
-function updateFromRGB(){
-  let r=+document.getElementById("r").value;
-  let g=+document.getElementById("g").value;
-  let b=+document.getElementById("b").value;
+function floodFill(sr,sc,target,repl){if(target===repl)return;const stack=[[sr,sc]];while(stack.length){const [r,c]=stack.pop();if(r<0||c<0||r>=height||c>=width)continue;if(grid[r][c]!==target)continue;grid[r][c]=repl;stack.push([r+1,c],[r-1,c],[r,c+1],[r,c-1]);}}
 
-  r=Math.max(0,Math.min(255,r));
-  g=Math.max(0,Math.min(255,g));
-  b=Math.max(0,Math.min(255,b));
-
-  const hex="#"+
-    r.toString(16).padStart(2,'0')+
-    g.toString(16).padStart(2,'0')+
-    b.toString(16).padStart(2,'0');
-
-  setColor(hex);
-}
-
-function save(){
-  history.push(JSON.stringify(grid));
-  if(history.length>50)history.shift();
-  redoStack=[];
-}
-
-function undo(){
-  if(!history.length)return;
-  redoStack.push(JSON.stringify(grid));
-  grid=JSON.parse(history.pop());
-  render();
-}
-
-function redo(){
-  if(!redoStack.length)return;
-  history.push(JSON.stringify(grid));
-  grid=JSON.parse(redoStack.pop());
-  render();
-}
-
-function paint(r,c){
-  if(tool==="eyedrop"){setColor(grid[r][c]);return;}
-  if(tool==="draw")grid[r][c]=color;
-  if(tool==="erase")grid[r][c]="#ffffff";
-  if(tool==="bucket")fill(r,c,grid[r][c],color);
-}
-
-function fill(r,c,target,newC){
-  if(target===newC)return;
-  const stack=[[r,c]];
-  while(stack.length){
-    const [x,y]=stack.pop();
-    if(x<0||y<0||x>=height||y>=width)continue;
-    if(grid[x][y]!==target)continue;
-    grid[x][y]=newC;
-    stack.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);
-  }
-}
+function paint(r,c){if(tool==='eyedrop'){setColor(grid[r][c]);return;}if(tool==='bucket'){save();floodFill(r,c,grid[r][c],color);return;}if(tool==='draw')grid[r][c]=color;if(tool==='erase')grid[r][c]="#ffffff";}
 
 function zoomIn(){zoom=Math.min(3,zoom+0.2);render();}
 function zoomOut(){zoom=Math.max(0.5,zoom-0.2);render();}
 
-function render(){
-  const g=document.getElementById("grid");
-  const size=20*zoom;
+function render(){const g=document.getElementById("grid");const size=20*zoom;g.style.gridTemplateColumns=`repeat(${width},${size}px)`;g.innerHTML="";for(let r=0;r<height;r++){for(let c=0;c<width;c++){const cell=document.createElement("div");cell.className="cell";cell.style.width=size+"px";cell.style.height=size+"px";cell.style.background=grid[r][c];cell.onmousedown=()=>{save();isDown=true;paint(r,c);render();};cell.onmouseenter=()=>{if(isDown){paint(r,c);render();}};g.appendChild(cell);}}}
 
-  g.style.gridTemplateColumns=`repeat(${width},${size}px)`;
-  g.innerHTML="";
+function renderPalettePanel(){
+  const list=document.getElementById("paletteList");
+  list.innerHTML="";
+  for(const name in PALETTES){
+    const group=document.createElement("div");group.className="paletteGroup";
 
-  for(let r=0;r<height;r++){
-    for(let c=0;c<width;c++){
-      const cell=document.createElement("div");
-      cell.className="cell";
-      cell.style.width=size+"px";
-      cell.style.height=size+"px";
-      cell.style.background=grid[r][c];
+    const title=document.createElement("div");title.className="paletteTitle";
+    title.textContent=name;
 
-      cell.onmousedown=()=>{save();isDown=true;paint(r,c);render();};
-      cell.onmouseenter=()=>{if(isDown){paint(r,c);render();}};
+    const colors=document.createElement("div");colors.className="paletteColors";
 
-      g.appendChild(cell);
-    }
-  }
-}
-
-document.addEventListener("mouseup",()=>isDown=false);
-
-init();
-/* CUSTOM PALETTES */
-let customPalettes = {};
-
-function saveCurrentPalette(){
-  const name = prompt("Name your palette:");
-  if(!name) return;
-  const colors = Array.from(document.querySelectorAll("#palette .color")).map(c=>c.style.background);
-  customPalettes[name] = colors;
-  addPaletteOption(name);
-}
-
-function addPaletteOption(name){
-  const sel = document.querySelector("select");
-  const opt = document.createElement("option");
-  opt.textContent = name;
-  sel.appendChild(opt);
-}
-
-// override setPalette to include custom
-const originalSetPalette = setPalette;
-setPalette = function(name){
-  if(customPalettes[name]){
-    const p=document.getElementById("palette");
-    p.innerHTML="";
-    customPalettes[name].forEach(c=>{
+    PALETTES[name].forEach(c=>{
       const d=document.createElement("div");
       d.className="color";
       d.style.background=c;
       d.onclick=()=>setColor(c);
-      p.appendChild(d);
+      colors.appendChild(d);
     });
-  } else {
-    originalSetPalette(name);
+
+    group.appendChild(title);
+    group.appendChild(colors);
+    list.appendChild(group);
   }
 }
 
-// add button
-const toolbar = document.querySelector(".toolbar");
-const btn = document.createElement("button");
-btn.textContent = "💾 Save Palette";
-btn.onclick = saveCurrentPalette;
-toolbar.appendChild(btn);
-
+document.addEventListener("mouseup",()=>isDown=false);
+init();
 </script>
 
 </body>
